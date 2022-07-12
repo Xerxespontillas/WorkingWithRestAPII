@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
 import '../Models/note.dart';
+import '../Models/note_insert.dart';
 import '../Services/notes_service.dart';
 
 class NoteModify extends StatefulWidget {
@@ -23,26 +24,30 @@ class _NoteModifyState extends State<NoteModify> {
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  bool _isLoading = false;
+  late bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    setState(() {
-      _isLoading = true;
-    });
-    noteService.getNotes(widget.noteID ?? '').then((response) {
+
+    if (isEditing) {
       setState(() {
-        _isLoading = false;
+        _isLoading = true;
       });
 
-      if (response.error) {
-        errorMessage = response.errorMessage ?? 'Error Occurred';
-      }
-      note = response.data!;
-      _titleController.text = note.noteTitle;
-      _contentController.text = note.noteContent;
-    });
+      noteService.getNotes(widget.noteID ?? '').then((response) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (response.error) {
+          errorMessage = response.errorMessage ?? 'Error Occurred';
+        }
+        note = response.data!;
+        _titleController.text = note.noteTitle;
+        _contentController.text = note.noteContent;
+      });
+    }
   }
 
   @override
@@ -53,45 +58,122 @@ class _NoteModifyState extends State<NoteModify> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(12.0),
-          child: _isLoading ? Center(child: CircularProgressIndicator(),) : Column(
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Note Title',
-                ),
-              ),
-              Container(
-                height: 8,
-              ),
-              TextField(
-                controller: _contentController,
-                decoration: InputDecoration(
-                  hintText: 'Note Content',
-                ),
-              ),
-              Container(
-                height: 8,
-              ),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                    child: Text(
-                      'Submit',
-                      style: TextStyle(color: Colors.white),
+          child: _isLoading
+              ? Center(
+                  child: CircularProgressIndicator(),
+                )
+              : Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'Note Title',
+                      ),
                     ),
-                    onPressed: () {
-                      if (isEditing) {
-                        ///
-                      } else {
-                        ///
-                      }
-                      Navigator.of(context).pop();
-                    }),
-              )
-            ],
-          ),
+                    Container(
+                      height: 8,
+                    ),
+                    TextField(
+                      controller: _contentController,
+                      decoration: InputDecoration(
+                        hintText: 'Note Content',
+                      ),
+                    ),
+                    Container(
+                      height: 8,
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                          child: Text(
+                            'Submit',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          onPressed: () async {
+                            if (isEditing) {
+                              if (isEditing) {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                              }
+
+                              final note = NoteManipulation(
+                                  noteTitle: _titleController.text,
+                                  noteContent: _contentController.text);
+                              final result = await noteService.updateNote(widget.noteID!, note);
+                              if (isEditing) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+
+                              const title = "Done";
+                              final text = result.error
+                                  ? (result.errorMessage ?? 'An error occurred')
+                                  : 'Your note is updated';
+
+                              showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                        title: const Text(title),
+                                        content: Text(text),
+                                        actions: [
+                                          ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text('OK'))
+                                        ],
+                                      )).then((data) {
+                                if (result.data!) {
+                                  Navigator.of(context).pop();
+                                }
+                              });
+                            } else {
+                              if (isEditing) {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                              }
+
+                              final note = NoteManipulation(
+                                  noteTitle: _titleController.text,
+                                  noteContent: _contentController.text);
+                              final result = await noteService.createNote(note);
+                              if (isEditing) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+
+                              const title = "Done";
+                              final text = result.error
+                                  ? (result.errorMessage ?? 'An error occurred')
+                                  : 'Your note is created';
+
+                              showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                        title: const Text(title),
+                                        content: Text(text),
+                                        actions: [
+                                          ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text('OK'))
+                                        ],
+                                      )).then((data) {
+                                if (result.data!) {
+                                  Navigator.of(context).pop();
+                                }
+                              });
+                            }
+                          }),
+                    )
+                  ],
+                ),
         ));
   }
 }
