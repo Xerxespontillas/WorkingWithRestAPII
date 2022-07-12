@@ -62,7 +62,7 @@ class NotesService {
         .put(Uri.parse('$API/notes/' + noteID),
             headers: headers, body: json.encode(item.toJson()))
         .then((data) {
-      if (data.statusCode == 204) {
+      if (data.statusCode == 200) {
         return APIResponse<bool>(data: true);
       }
       return APIResponse<bool>(error: true, errorMessage: 'An error occurred');
@@ -72,7 +72,7 @@ class NotesService {
 
   Future<APIResponse<bool>> deleteNote(String noteID) {
       return http.delete(Uri.parse('$API/notes/'+ noteID), headers: headers).then((data) {
-      if (data.statusCode == 204) {
+      if (data.statusCode == 200) {
         return APIResponse<bool>(data: true);
       }
       return APIResponse<bool>(error: true, errorMessage: 'An error occurred');
