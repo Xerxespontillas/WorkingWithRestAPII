@@ -92,7 +92,44 @@ class _NoteModifyState extends State<NoteModify> {
                           ),
                           onPressed: () async {
                             if (isEditing) {
-                              ///
+                              if (isEditing) {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                              }
+
+                              final note = NoteManipulation(
+                                  noteTitle: _titleController.text,
+                                  noteContent: _contentController.text);
+                              final result = await noteService.updateNote(widget.noteID!, note);
+                              if (isEditing) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+
+                              const title = "Done";
+                              final text = result.error
+                                  ? (result.errorMessage ?? 'An error occurred')
+                                  : 'Your note is updated';
+
+                              showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                        title: const Text(title),
+                                        content: Text(text),
+                                        actions: [
+                                          ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text('OK'))
+                                        ],
+                                      )).then((data) {
+                                if (result.data!) {
+                                  Navigator.of(context).pop();
+                                }
+                              });
                             } else {
                               if (isEditing) {
                                 setState(() {
@@ -100,7 +137,7 @@ class _NoteModifyState extends State<NoteModify> {
                                 });
                               }
 
-                              final note = NoteInsert(
+                              final note = NoteManipulation(
                                   noteTitle: _titleController.text,
                                   noteContent: _contentController.text);
                               final result = await noteService.createNote(note);
@@ -127,15 +164,11 @@ class _NoteModifyState extends State<NoteModify> {
                                               },
                                               child: const Text('OK'))
                                         ],
-                                      )
-                                      )
-                                      .then((data) {
-                                        if(result.data!){
-                                          Navigator.of(context).pop();
-                                        }
-                                      }
-                                      )
-                                      ; 
+                                      )).then((data) {
+                                if (result.data!) {
+                                  Navigator.of(context).pop();
+                                }
+                              });
                             }
                           }),
                     )
